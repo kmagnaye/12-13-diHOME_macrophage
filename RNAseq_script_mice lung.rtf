@@ -1,0 +1,293 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2638
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Monaco;\f1\fswiss\fcharset0 Helvetica;\f2\fnil\fcharset0 Menlo-Regular;
+\f3\froman\fcharset0 TimesNewRomanPSMT;}
+{\colortbl;\red255\green255\blue255;\red22\green21\blue22;\red22\green21\blue22;\red26\green26\blue26;
+\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c11373\c10980\c11373;\cssrgb\c11373\c10980\c11373\c3922;\cssrgb\c13333\c13333\c13333;
+\cssrgb\c100000\c100000\c100000;\csgray\c0;}
+\margl1440\margr1440\vieww22840\viewh12720\viewkind0
+\deftab720
+\pard\pardeftab720\ri-1442\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \expnd0\expndtw0\kerning0
+##############
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 ## Whole UNIX code to run raw sequence data processing ############\
+
+\f0 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\
+\pard\pardeftab720\ri-925\partightenfactor0
+\cf2 ####################
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 ## To create script for concatenating fastq.gz files across lanes
+\f0 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\
+\pard\pardeftab720\sl360\partightenfactor0
+\cf2 \
+#!/usr/bin/bash\
+#$ -cwd\
+#$ -pe smp 10\
+#$ -l mem_free=10G\
+#$ -t 1:5\
+#$ -l h_rt=329:00:00\
+#$ -m e\
+#$ -M din.lin@ucsf.edu\
+\
+OUTPUT_DIRECTORY=Lane_concat_fastq #name of output\cb1 \
+\cb3 mkdir $\{OUTPUT_DIRECTORY\}\
+\cb1 \
+\cb3 # create $line variable from each line in input text file\cb1 \
+\cb3 while IFS=\'91 \'91 read -r line || [[ -n "$line" ]]; do\cb1 \
+\cb3         (\cb1 \
+\cb3         # create output file for concatenated sequences\cb1 \
+\cb3         SAMPLE_ID=$line\cb1 \
+\cb3         # echo "Concatenating data for sample $\{SAMPLE_ID\}"\cb1 \
+\cb3         # create variable names for the output files\cb1 \
+\cb3         OUTPUT1=$\{OUTPUT_DIRECTORY\}/$\{SAMPLE_ID\}_R1.fastq\cb1 \
+\cb3         OUTPUT2=$\{OUTPUT_DIRECTORY\}/$\{SAMPLE_ID\}_R2.fastq\cb1 \
+\cb3         # initialize output files\cb1 \
+\cb3         touch $\{OUTPUT1\}\cb1 \
+\cb3         touch $\{OUTPUT2\}\cb1 \
+\cb3         # iterate through sequencing lanes 1-4 and cat them to output file\cb1 \
+\cb3         for i in $(seq 1 4);\cb1 \
+\cb3         do (\cb1 \
+\cb3                 # Adding $\{READ1\} to $\{OUTPUT1\}\cb1 \
+\cb3                 READ1=$\{SAMPLE_ID\}_*_L00$\{i\}_R1_001.fastq\cb1 \
+\cb3                 cat $\{READ1\} >> $\{OUTPUT1\}\
+\cb1 \
+\cb3                 # Adding $\{READ2\} to $\{OUTPUT2\}\cb1 \
+\cb3                 READ2=$\{SAMPLE_ID\}_*_L00$\{i\}_R2_001.fastq\cb1 \
+\cb3                 cat $\{READ2\} >> $\{OUTPUT2\}\cb1 \
+\cb3            )\cb1 \
+\cb3         done\cb1 \
+\cb3         )\cb1 \
+\cb3 done < $1\
+\
+\
+\pard\pardeftab720\ri0\partightenfactor0
+\cf2 Dins_script.sh SampleSheet.txt\
+\pard\pardeftab720\partightenfactor0
+\cf2 chmod a+x Dins_script.sh\
+\pard\pardeftab720\ri0\partightenfactor0
+\cf2 qsub -cwd  Dins_script.sh\
+\
+\
+####################
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 ## To test execute 
+\f0\fs21\fsmilli10800 \cf4 \cb5 \expnd0\expndtw0\kerning0
+Trim_galore
+\f1\fs24 \cf0 \cb1 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+\cf0 \
+conda create --name mlungENV\
+conda activate mlungENV\
+conda install -c bioconda trim-galore\
+\pard\pardeftab720\sl300\partightenfactor0
+
+\f0\fs21\fsmilli10800 \cf4 \cb5 \expnd0\expndtw0\kerning0
+\
+conda install fastqc
+\f1\fs24 \cf0 \cb1 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+\cf0 \
+\
+trim_galore -q 20 -o Trim_galored_fastqs_clipped/ --paired Lane_concat_fastq/Lynch-DL-3532-01_*.fastq\
+\pard\pardeftab720\sl300\partightenfactor0
+
+\f0\fs21\fsmilli10800 \cf4 \cb5 \expnd0\expndtw0\kerning0
+\
+\pard\pardeftab720\ri0\partightenfactor0
+
+\fs24 \cf2 \cb3 ####################
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 ## To execute 
+\f0\fs21\fsmilli10800 \cf4 \cb5 \expnd0\expndtw0\kerning0
+Trim_galore\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\fs24 \cf0 \cb1 \kerning1\expnd0\expndtw0 #!/bin/bash\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+
+\f0\fs21\fsmilli10800 \cf4 \cb5 \expnd0\expndtw0\kerning0
+\
+\pard\pardeftab720\sl300\partightenfactor0
+\cf4 while IFS=' '
+\f2\fs22 \cf6 \kerning1\expnd0\expndtw0 \CocoaLigature0  
+\f0\fs21\fsmilli10800 \cf4 \expnd0\expndtw0\kerning0
+\CocoaLigature1 read -r line || [[ -n "$line" ]]; do\
+        (\
+        # create output file for concatenates sequences\
+        SAMPLE_ID=$line\
+        echo "Galoreing data for sample $\{SAMPLE_ID\}"\
+\
+        # iterate through sequencing lanes and trimgalore them to output file\
+        for i in $\{SAMPLE_ID\};\
+        do (\
+                # define read 1 and read 2\
+                READ1=Lane_concat_fastq$\{SAMPLE_ID\}_R1.fastq\
+                READ2=Lane_concat_fastq$\{SAMPLE_ID\}_R2.fastq\
+			echo "$\{READ1\}"\
+			echo "$\{READ2\}"\
+\
+\
+                #execute trimgalore\
+               trim_galore -q 20 -o ./Trim_galored_fastqs_clipped/ 
+\f1\fs24 \cf0 \cb1 \kerning1\expnd0\expndtw0 --three_prime_clip_R1 10 --three_prime_clip_R2 10
+\f0\fs21\fsmilli10800 \cf4 \cb5 \expnd0\expndtw0\kerning0
+ --paired Lane_concat_fastq/$\{READ1[$i]\} Lane_concat_fastq/$\{READ2[$i]\}\
+\
+           )\
+        done\
+        )\
+done < $1\
+\
+\pard\pardeftab720\ri0\partightenfactor0
+
+\fs24 \cf2 \cb3 ################## fastqc\
+conda activate mlungENV\
+conda install fastqc\
+module load htstream/1.3.3\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 module load fastqc/0.11.3\
+\pard\pardeftab720\ri0\partightenfactor0
+
+\f0 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\
+\pard\pardeftab720\sl300\partightenfactor0
+
+\fs21\fsmilli10800 \cf4 \cb5 fastqc *.fq\
+\
+\pard\pardeftab720\ri0\partightenfactor0
+
+\fs24 \cf2 \cb3 ################## 
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 HTStream
+\f0\fs21\fsmilli10800 \cf4 \cb5 \expnd0\expndtw0\kerning0
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\fs24 \cf0 \cb1 \kerning1\expnd0\expndtw0 conda activate 
+\f0 \cf2 \cb3 \expnd0\expndtw0\kerning0
+mlungENV
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 \
+\
+wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M27/gencode.vM27.primary_assembly.annotation.gtf.gz\
+\
+wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M27/GRCm38.primary_assembly.genome.fa.gz\
+\pard\pardeftab720\li-90\ri-450\partightenfactor0
+\cf0 gunzip gencode.vM27.primary_assembly.annotation.gtf.gz\
+gunzip GRCm38.primary_assembly.genome.fa.gz
+\f3 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+
+\f1 \cf0 \
+module load CBI\
+conda update -n base -c defaults conda\
+conda install htstream\
+conda update htstream\
+module load htstream/1.3.3\
+\
+conda install -c bioconda STAR\
+module load star/2.7.9a\
+conda update STAR\
+\
+nano MgIndex.sh\
+\
+#!/bin/bash\
+FASTA="GRCm39.primary_assembly.genome.fa"\
+GTF="gencode.vM27.primary_assembly.annotation.gtf"\
+\
+mkdir star.overlap100.gencode.vm39\
+cd star.overlap100.gencode.vm39\
+\
+module load star/2.7.7a\
+\pard\pardeftab720\ri0\partightenfactor0
+
+\f0 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\
+call="STAR\
+     --runThreadN 10 \\\
+     --runMode genomeGenerate \\\
+     --genomeDir . \\\
+     --sjdbOverhang 100 \\\
+     --sjdbGTFfile $\{GTF\} \\\
+     --genomeFastaFiles $\{FASTA\}"\
+\
+echo $call\
+eval $call\
+\
+chmod a+x MgIndex.sh\
+\pard\pardeftab720\partightenfactor0
+\cf2 ./MgIndex.sh\
+\pard\pardeftab720\ri0\partightenfactor0
+\cf2 \
+####################
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 ## To align
+\f0 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\
+nano MgAlign.sh\
+\
+#!/bin/bash\
+#$ -cwd\
+#$ -pe smp 10\
+#$ -l mem_free=10G\
+#$ -t 1:5\
+#$ -l h_rt=329:00:00\
+#$ -m e\
+#$ -M din.lin@ucsf.edu\
+\
+REF="star_indices_overhang150"\
+\
+while IFS=' ' read -r line || [[ -n "$line" ]]; do\
+        (\
+        sample="$line"\
+echo "My ARRAY_TASK_ID: " $line\
+\
+outpath='mlung-STAR_alignment'\
+        for i in $\{sample\};\
+        do (\
+[[ -d $\{outpath\} ]] || mkdir $\{outpath\}\
+[[ -d $\{outpath\}/$\{sample\} ]] || mkdir $\{outpath\}/$\{sample\}\
+\
+echo "SAMPLE: $\{sample\}"\
+\
+call="STAR --runThreadN 20 --genomeDir $REF --outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --readFilesIn Dupout/$\{sample\}.*_R1.fastq.gz Dupout/$\{sample\}.*_R2.fastq.gz --quantMode GeneCounts --outFileNamePrefix $\{outpath\}/$\{sample\}_ $\{outpath\}/$\{sample\}-STAR.stdout 2> $\{outpath\}/$\{sample\}-STAR.stderr"\
+\
+echo $call\
+eval $call\
+    )\
+        done\
+        )\
+done < "$1"\
+\
+chmod a+x MgAlign.sh\
+./MgAlign.sh SampleSheet1.txt\
+\
+####################
+\f1 \cf0 \cb1 \kerning1\expnd0\expndtw0 ## To get gene count
+\f0 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\
+nano GetCount.sh\
+\
+#!/bin/bash\
+#$ -cwd\
+#$ -pe smp 10\
+#$ -l mem_free=10G\
+#$ -t 1:5\
+#$ -l h_rt=329:00:00\
+#$ -m e\
+#$ -M din.lin@ucsf.edu\
+while IFS=' ' read -r line || [[ -n "$line" ]]; do\
+        (\
+        sample="$line"\
+        for i in $\{sample\};\
+        do (\
+echo $\{sample\} \
+\pard\pardeftab720\ri-887\partightenfactor0
+\cf2 cat mlung-STAR_alignment/$\{sample\}_ReadsPerGene.out.tab | tail -n +5 | cut -f4 > 03-Counts/tmp/$\{sample\}.count\
+\pard\pardeftab720\ri0\partightenfactor0
+\cf2         ) done\
+        )\
+done < "$1"\
+\
+scp din.lin@log1.wynton.ucsf.edu:/wynton/group/lynch/DLin/Lynch-DL-3532/AllFastq/03-Counts/mlung_rnaseq_counts.txt .\
+}
